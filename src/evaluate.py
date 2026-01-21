@@ -28,7 +28,7 @@ from utils import CHECKPOINTS_PATH, EVAL_FIGURES_PATH, seed_everything
 
 def load_model(checkpoint_path: str, model_type: str) -> nn.Module:
     """Load trained model from checkpoint file."""
-    model = create_model(model_type=model_type)
+    model = create_model(model_type=model_type, max_velocity=RobotParams.max_v)
     model.load_state_dict(torch.load(checkpoint_path, map_location="cpu"))
     model.eval()
     return model

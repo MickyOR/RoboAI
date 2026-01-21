@@ -9,6 +9,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+import utils
+
 
 class NavigationNet(nn.Module):
     """
@@ -149,6 +151,7 @@ class NavigationNetSimple(nn.Module):
                 nn.init.zeros_(m.bias)
 
     def forward(self, x):
+        x = compute_relative_features(x)
         out = self.net(x)
         return torch.tanh(out) * self.max_velocity
 
