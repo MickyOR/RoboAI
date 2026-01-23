@@ -230,6 +230,8 @@ class ExpertController:
             # Check if reached target
             dist = compute_distance_to_target(state, target)
             if dist < THRESHOLD:
+                controls.append([0.0, 0.0])
+                states.append(state)
                 break
 
             # Compute and apply control

@@ -268,6 +268,7 @@ def print_dataset_stats(dataset: Dict, name: str):
     """Print dataset statistics: sample count, shapes, ranges, mean distance."""
     inputs = dataset["inputs"]
     outputs = dataset["outputs"]
+    max_distance = np.max([metadata["final_distance"] for metadata in dataset["metadata"]])
     mean_distance = np.mean([metadata["final_distance"] for metadata in dataset["metadata"]])
 
     print(f"\n{name} Statistics:")
@@ -286,6 +287,7 @@ def print_dataset_stats(dataset: Dict, name: str):
         print(f"    {label}: [{outputs[:, i].min():.3f}, {outputs[:, i].max():.3f}]")
 
     print(f"\n  Mean final distance: {mean_distance:.3f}")
+    print(f"  Max final distance: {max_distance:.3f}")
 
 
 def parse_config_dataset(config_dict: dict) -> dict:
