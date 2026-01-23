@@ -23,7 +23,7 @@ from dataset import (
     save_dataset,
     split_dataset_by_trajectory,
 )
-from model import count_parameters, create_model, normalize_inputs
+from model import compute_relative_features_np, count_parameters, create_model, normalize_inputs
 from robot_simulator import (
     DifferentialDriveRobot,
     ExpertController,
@@ -130,8 +130,17 @@ def train_model(
         Training history dictionary
     """
     # Normalize inputs
-    train_inputs_norm, stats = normalize_inputs(train_dataset["inputs"])
-    val_inputs_norm, _ = normalize_inputs(val_dataset["inputs"], stats)
+    # train_inputs_norm, stats = normalize_inputs(train_dataset["inputs"])
+    # val_inputs_norm, _ = normalize_inputs(val_dataset["inputs"], stats)
+    if model_type == "relative":
+        train_inputs_rel = compute_relative_features_np(train_dataset["inputs"])
+        val_inputs_rel = compute_relative_features_np(val_dataset["inputs"])
+
+        train_inputs_norm, stats = normalize_inputs(train_inputs_rel)
+        val_inputs_norm, _ = normalize_inputs(val_inputs_rel, stats)
+    else:
+        train_inputs_norm, stats = normalize_inputs(train_dataset["inputs"])
+        val_inputs_norm, _ = normalize_inputs(val_dataset["inputs"], stats)
 
     # Save normalization stats
     np.savez(DATA_PATH / "normalization_stats.npz", mean=stats["mean"], std=stats["std"])
@@ -268,10 +277,10 @@ def rollout_model_on_dataset(
     else:
         # Fallback to identity if stats don't exist (shouldn't happen)
         print("Warning: normalization_stats.npz not found, using identity normalization")
-        stats = {
-            "mean": np.zeros(5),  # x, y, theta, x_target, y_target
-            "std": np.ones(5),
-        }
+        if model_type == "relative":
+            stats = {"mean": np.zeros(4, dtype=np.float32), "std": np.ones(4, dtype=np.float32)}
+        else:
+            stats = {"mean": np.zeros(5, dtype=np.float32), "std": np.ones(5, dtype=np.float32)}
 
     outputs = []
     trajectory_ids = []
@@ -344,7 +353,14 @@ def run_model_on_robot(
                 return np.array(states), np.array(controls), True
 
             # Prepare input: [x, y, theta, x_target, y_target]
-            inp = np.concatenate([state, target])
+            # inp = np.concatenate([state, target])
+            if model_type == "relative":
+                inp = np.array(
+                    [state[0] - target[0], state[1] - target[1], np.sin(state[2]), np.cos(state[2])],
+                    dtype=np.float32,
+                )
+            else:
+                inp = np.concatenate([state, target]).astype(np.float32)
 
             # Normalize
             inp_norm = (inp - stats["mean"]) / stats["std"]

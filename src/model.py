@@ -151,7 +151,9 @@ class NavigationNetSimple(nn.Module):
                 nn.init.zeros_(m.bias)
 
     def forward(self, x):
-        x = compute_relative_features(x)
+        if x.shape[1] != 4:
+            raise ValueError(f"Expected input dim 4 or 5, got {x.shape[1]}")
+        
         out = self.net(x)
         return torch.tanh(out) * self.max_velocity
 
@@ -178,6 +180,20 @@ def compute_relative_features(inputs: torch.Tensor) -> torch.Tensor:
 
     return torch.cat([x - x_targets, y - y_targets, sin_theta, cos_theta], dim=1)
 
+def compute_relative_features_np(inputs: np.ndarray) -> np.ndarray:
+    """
+    inputs: (N, 5) [x, y, theta, x_target, y_target]
+    returns: (N, 4) [dx, dy, sin(theta), cos(theta)]
+    """
+    x = inputs[:, 0]
+    y = inputs[:, 1]
+    theta = inputs[:, 2]
+    x_t = inputs[:, 3]
+    y_t = inputs[:, 4]
+
+    dx = x - x_t
+    dy = y - y_t
+    return np.stack([dx, dy, np.sin(theta), np.cos(theta)], axis=1).astype(np.float32)
 
 def create_model(model_type: str, **kwargs) -> nn.Module:
     """
