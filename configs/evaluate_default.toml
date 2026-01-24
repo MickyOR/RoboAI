@@ -3,4 +3,4 @@
 seed = 123
 model_type = "relative"
 n_scenarios = 50
-scenario_difficulty = "medium"
+scenario_difficulty = "hard"
